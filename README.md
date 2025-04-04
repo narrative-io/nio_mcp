@@ -9,6 +9,7 @@ A simple Model Context Protocol (MCP) server for Claude Desktop.
 ```bash
 bun install @modelcontextprotocol/sdk dotenv
 bun add -D typescript @types/node
+bun add axios
 ```
 
 2. Create your server code in `src/index.ts`
