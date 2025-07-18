@@ -9,7 +9,7 @@ import {
   ErrorCode,
   McpError,
 } from "@modelcontextprotocol/sdk/types.js";
-import type { Resource, AttributeResponse } from "./types/index.js";
+import type { Resource, AttributeResponse, DatasetResponse } from "./types/index.js";
 import dotenv from "dotenv";
 import axios from "axios";
 
@@ -67,6 +67,24 @@ async function fetchAttributes(query: string = "", page: number = 1, perPage: nu
     return response.data;
   } catch (error) {
     console.error("Error fetching attributes:", error);
+    throw error;
+  }
+}
+
+// Function to fetch datasets
+async function fetchDatasets(): Promise<DatasetResponse> {
+  const url = new URL(`${NARRATIVE_API_URL}/datasets`);
+  
+  try {
+    const response = await axios.get<DatasetResponse>(url.toString(), {
+      headers: {
+        'Authorization': `Bearer ${NARRATIVE_API_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching datasets:", error);
     throw error;
   }
 }
@@ -187,6 +205,15 @@ class MyMcpServer {
               required: ["query"],
             },
           },
+          {
+            name: "list_datasets",
+            description: "List all available datasets from Narrative marketplace",
+            inputSchema: {
+              type: "object",
+              properties: {},
+              required: [],
+            },
+          },
         ],
       })
     );
@@ -249,6 +276,44 @@ class MyMcpServer {
                 {
                   type: "text",
                   text: `Error searching attributes: ${error}`,
+                },
+              ],
+              isError: true,
+            };
+          }
+        }
+        if (request.params.name === "list_datasets") {
+          try {
+            const response = await fetchDatasets();
+            
+            // Store datasets in memory for resource access
+            for (const dataset of response.records) {
+              resources[`dataset-${dataset.id}`] = {
+                id: `dataset-${dataset.id}`,
+                name: dataset.name,
+                content: JSON.stringify(dataset, null, 2),
+              };
+            }
+
+            // Format the response
+            const formattedResults = response.records.map(dataset => 
+              `- ${dataset.name} (ID: ${dataset.id}): ${dataset.description.substring(0, 100)}...`
+            ).join('\n');
+
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: `Found ${response.records.length} datasets\n\n${formattedResults}\n\nYou can access full dataset details as resources.`
+                },
+              ],
+            };
+          } catch (error) {
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: `Error fetching datasets: ${error}`,
                 },
               ],
               isError: true,
