@@ -15,6 +15,28 @@ import axios from "axios";
 
 dotenv.config();
 
+// Function to validate environment variables (exported for testing)
+export function validateEnvironmentVariables(env = process.env): { apiUrl: string; apiToken: string } {
+  const NARRATIVE_API_URL = env.NARRATIVE_API_URL;
+  const NARRATIVE_API_TOKEN = env.NARRATIVE_API_TOKEN;
+
+  if (!NARRATIVE_API_URL) {
+    throw new Error("NARRATIVE_API_URL environment variable is required");
+  }
+
+  if (!NARRATIVE_API_TOKEN) {
+    throw new Error("NARRATIVE_API_TOKEN environment variable is required");
+  }
+
+  return {
+    apiUrl: NARRATIVE_API_URL,
+    apiToken: NARRATIVE_API_TOKEN
+  };
+}
+
+// Validate required environment variables
+const { apiUrl: NARRATIVE_API_URL, apiToken: NARRATIVE_API_TOKEN } = validateEnvironmentVariables();
+
 // Sample resources (replace with your own)
 const resources: Record<string, Resource> = {
   "1": {
@@ -26,7 +48,7 @@ const resources: Record<string, Resource> = {
 
 // Add this function to fetch attributes
 async function fetchAttributes(query: string = "", page: number = 1, perPage: number = 10): Promise<AttributeResponse> {
-  const url = new URL("https://api.narrative.io/attributes");
+  const url = new URL(`${NARRATIVE_API_URL}/attributes`);
   
   if (query) {
     url.searchParams.append("q", query);
@@ -36,7 +58,12 @@ async function fetchAttributes(query: string = "", page: number = 1, perPage: nu
   url.searchParams.append("per_page", perPage.toString());
   
   try {
-    const response = await axios.get<AttributeResponse>(url.toString());
+    const response = await axios.get<AttributeResponse>(url.toString(), {
+      headers: {
+        'Authorization': `Bearer ${NARRATIVE_API_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+    });
     return response.data;
   } catch (error) {
     console.error("Error fetching attributes:", error);
