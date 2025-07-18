@@ -1,4 +1,4 @@
-I need you to review all the changes you've made to the codebase and commit them to Git. But here's the important part: I want you to think carefully about how you structure these commits.
+I need you to review all the changego you've made to the codebase and commit them to Git. But here's the important part: I want you to think carefully about how you structure these commits.
 
 What I'm asking you to do:
 Take a step back and look at your changes as a whole. Ask yourself: "Am I committing one logical piece of work, or have I actually completed several different tasks?"
