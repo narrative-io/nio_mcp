@@ -18,6 +18,8 @@
   "scripts": {
     "build": "tsc --outDir build",
     "start": "bun build/src/index.js",
-    "dev": "bun --watch src/index.ts"
+    "dev": "bun --watch src/index.ts",
+    "test": "bun test tests/",
+    "test:watch": "bun test tests/ --watch"
   }
 }
