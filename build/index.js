@@ -20,8 +20,9 @@ export function validateEnvironmentVariables(env = process.env) {
         apiToken: NARRATIVE_API_TOKEN
     };
 }
-// Validate required environment variables
-const { apiUrl: NARRATIVE_API_URL, apiToken: NARRATIVE_API_TOKEN } = validateEnvironmentVariables();
+// Environment variables will be validated when server starts
+let NARRATIVE_API_URL;
+let NARRATIVE_API_TOKEN;
 // Sample resources (replace with your own)
 const resources = {
     "1": {
@@ -72,6 +73,16 @@ async function fetchDatasets() {
 class MyMcpServer {
     server;
     constructor() {
+        // Validate environment variables when server is constructed
+        try {
+            const { apiUrl, apiToken } = validateEnvironmentVariables();
+            NARRATIVE_API_URL = apiUrl;
+            NARRATIVE_API_TOKEN = apiToken;
+        }
+        catch (error) {
+            console.error("Failed to initialize MCP server:", error);
+            throw error;
+        }
         this.server = new Server({
             name: "narrative-mcp-server",
             version: "0.1.0",
@@ -238,7 +249,10 @@ class MyMcpServer {
                         };
                     }
                     // Format the response
-                    const formattedResults = response.records.map(dataset => `- ${dataset.name} (ID: ${dataset.id}): ${dataset.description.substring(0, 100)}...`).join('\n');
+                    const formattedResults = response.records.map(dataset => {
+                        const description = dataset.description ? dataset.description.substring(0, 100) : 'No description available';
+                        return `- ${dataset.name} (ID: ${dataset.id}): ${description}...`;
+                    }).join('\n');
                     return {
                         content: [
                             {

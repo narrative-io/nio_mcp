@@ -31,7 +31,7 @@ export interface AttributeResponse {
 export interface Dataset {
   id: string;
   name: string;
-  description: string;
+  description?: string;
   // Additional fields will be added based on actual API response
 }
 
