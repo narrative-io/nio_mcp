@@ -12,9 +12,19 @@ bun add -D typescript @types/node
 bun add axios
 ```
 
-2. Create your server code in `src/index.ts`
+2. Configure environment variables:
 
-3. Run your server:
+```bash
+cp .env.template .env
+```
+
+Edit `.env` and add your Narrative API credentials:
+- `NARRATIVE_API_TOKEN` - Your Narrative API token
+- `NARRATIVE_API_URL` - Base URL for Narrative API endpoints (default: https://api.narrative.io)
+
+3. Create your server code in `src/index.ts`
+
+4. Run your server:
 
 ```bash
 bun src/index.ts
