@@ -266,5 +266,37 @@ Before submitting, ensure you've addressed:
 [Any other relevant information]
 ```
 
-** TICKET DESCRIPTIONS ARE LMITED to 10,000 CHARACTERS ** 
+** TICKET DESCRIPTIONS ARE LIMITED to 10,000 CHARACTERS ** 
+
+## Shortcut API Requirements for Creating Stories
+
+When using the Shortcut MCP integration to create stories, you must:
+
+1. **Use workflow ID, not team name**: The `team` parameter often fails. Instead, use the `workflow` parameter with a valid workflow ID from the organization.
+
+2. **Get workflow IDs**: Use `mcp__shortcut__list-workflows` or `mcp__shortcut__list-teams` to find valid workflow IDs. Common workflow IDs:
+   - `500000005` - Default workflow (most common)
+   - `500002608` - Attribute Mapping workflow
+   - `500000024` - Product Idea Workflow
+
+3. **Required parameters for story creation**:
+   - `name` (required) - Story title
+   - `description` (optional but recommended) - Story details
+   - `type` (optional, defaults to "feature") - Can be "feature", "bug", or "chore"
+   - `epic` (optional) - Epic ID number to associate the story with
+   - `workflow` (required if team fails) - Workflow ID number
+
+4. **Epic association**: If you want to add the story to an epic, use the epic's public ID number (e.g., `45538`)
+
+5. **Example successful creation**:
+```javascript
+mcp__shortcut__create-story({
+  name: "Story title",
+  description: "Detailed description with acceptance criteria",
+  type: "chore",
+  epic: 45538,
+  workflow: 500000005
+})
+```
+
 After creating the ticket, fetch it to make sure the changes have been applied.
