@@ -143,20 +143,20 @@ export class ToolHandlers {
     try {
       const response = await this.apiClient.fetchDatasets();
       
-      // Store datasets in memory for resource access using ResourceManager
+      // Store datasets in memory for backward compatibility with legacy resource access
       this.resourceManager.addDatasetsAsResources(response.records);
 
-      // Format the response
+      // Format the response with ResourceTemplate links
       const formattedResults = response.records.map(dataset => {
         const description = dataset.description ? dataset.description.substring(0, 100) : 'No description available';
-        return `- ${dataset.name} (ID: ${dataset.id}): ${description}...`;
+        return `- ${dataset.name} (ID: ${dataset.id}): ${description}...\n  Resource: dataset://${dataset.id}`;
       }).join('\n');
 
       return {
         content: [
           {
             type: "text",
-            text: `Found ${response.records.length} datasets\n\n${formattedResults}\n\nYou can access full dataset details as resources.`
+            text: `Found ${response.records.length} datasets\n\n${formattedResults}\n\nAccess full dataset details using the resource links above (e.g., dataset://12345).`
           },
         ],
       };

@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { AttributeResponse, DatasetResponse } from "../types/index.js";
+import type { AttributeResponse, DatasetResponse, Dataset } from "../types/index.js";
 
 export class NarrativeApiClient {
   private readonly apiUrl: string;
@@ -51,6 +51,19 @@ export class NarrativeApiClient {
       return response.data;
     } catch (error) {
       throw new Error(`Failed to fetch datasets: ${error}`);
+    }
+  }
+
+  async fetchDatasetById(id: string): Promise<Dataset> {
+    const url = new URL(`${this.apiUrl}/datasets/${id}`);
+    
+    try {
+      const response = await axios.get<Dataset>(url.toString(), {
+        headers: this.headers,
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to fetch dataset ${id}: ${error}`);
     }
   }
 }
