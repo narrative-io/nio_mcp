@@ -10,7 +10,7 @@ import type { Resource } from "../types/index.js";
 export class ResourceHandlers {
   constructor(
     private server: Server,
-    private resources: Record<string, Resource>
+    private getResources: () => Record<string, Resource>
   ) {}
 
   setup(): void {
@@ -21,14 +21,17 @@ export class ResourceHandlers {
   private setupResourceList(): void {
     this.server.setRequestHandler(
       ListResourcesRequestSchema,
-      async () => ({
-        resources: Object.values(this.resources).map((resource) => ({
-          uri: `resource:///${resource.id}`,
-          name: resource.name,
-          mimeType: "text/plain",
-          description: `Resource: ${resource.name}`,
-        })),
-      })
+      async () => {
+        const resources = this.getResources();
+        return {
+          resources: Object.values(resources).map((resource) => ({
+            uri: `resource:///${resource.id}`,
+            name: resource.name,
+            mimeType: "text/plain",
+            description: `Resource: ${resource.name}`,
+          })),
+        };
+      }
     );
   }
 
@@ -38,7 +41,8 @@ export class ResourceHandlers {
       async (request) => {
         const url = new URL(request.params.uri);
         const id = url.pathname.replace(/^\//, "");
-        const resource = this.resources[id];
+        const resources = this.getResources();
+        const resource = resources[id];
 
         if (!resource) {
           throw new McpError(
