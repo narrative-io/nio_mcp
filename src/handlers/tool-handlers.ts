@@ -5,72 +5,53 @@ import {
   ErrorCode,
   McpError,
 } from "@modelcontextprotocol/sdk/types.js";
-import type { Resource } from "../types/index.js";
+import { z } from "zod";
+import type { 
+  StoredResource, 
+  ToolValidationError,
+  EchoToolInput,
+  SearchAttributesInput,
+  ListDatasetsInput 
+} from "../types/index.js";
 import { NarrativeApiClient } from "../lib/api-client.js";
+import { ToolRegistry } from "../lib/tool-registry.js";
+import { ResourceManager } from "../lib/resource-manager.js";
 
 export class ToolHandlers {
+  private resourceManager: ResourceManager;
+
   constructor(
     private server: Server,
     private apiClient: NarrativeApiClient,
-    private resources: Record<string, Resource>
-  ) {}
+    resources: Record<string, StoredResource>
+  ) {
+    this.resourceManager = new ResourceManager(resources);
+  }
 
   setup(): void {
     this.setupToolsList();
     this.setupToolCalls();
   }
 
+  /**
+   * Get the underlying resources for use by ResourceHandlers
+   */
+  getResources(): Record<string, StoredResource> {
+    return this.resourceManager.getAllResources();
+  }
+
+  /**
+   * Get the resource manager for direct access to SDK-compatible methods
+   */
+  getResourceManager(): ResourceManager {
+    return this.resourceManager;
+  }
+
   private setupToolsList(): void {
     this.server.setRequestHandler(
       ListToolsRequestSchema,
       async () => ({
-        tools: [
-          {
-            name: "echo",
-            description: "Echo back a message",
-            inputSchema: {
-              type: "object",
-              properties: {
-                message: {
-                  type: "string",
-                  description: "Message to echo back",
-                },
-              },
-              required: ["message"],
-            },
-          },
-          {
-            name: "search_attributes",
-            description: "Search Narrative Rosetta Stone Attributes",
-            inputSchema: {
-              type: "object",
-              properties: {
-                query: {
-                  type: "string",
-                  description: "Search term for attributes",
-                },
-                page: {
-                  type: "number",
-                  description: "Page number (starts at 1)",
-                },
-                perPage: {
-                  type: "number",
-                  description: "Results per page (default: 10)",
-                },
-              },
-              required: ["query"],
-            },
-          },
-          {
-            name: "list_datasets",
-            description: "List all available datasets from Narrative marketplace",
-            inputSchema: {
-              type: "object",
-              properties: {},
-              required: [],
-            },
-          },
-        ],
+        tools: ToolRegistry.getAllTools(),
       })
     );
   }
@@ -79,58 +60,58 @@ export class ToolHandlers {
     this.server.setRequestHandler(
       CallToolRequestSchema,
       async (request) => {
-        switch (request.params.name) {
-          case "echo":
-            return this.handleEcho(request.params.arguments);
-          case "search_attributes":
-            return this.handleSearchAttributes(request.params.arguments);
-          case "list_datasets":
-            return this.handleListDatasets(request.params.arguments);
-          default:
+        try {
+          // Validate input using ToolRegistry
+          const validatedInput = ToolRegistry.validateToolInput(
+            request.params.name,
+            request.params.arguments || {}
+          );
+
+          switch (request.params.name) {
+            case "echo":
+              return this.handleEcho(validatedInput as EchoToolInput);
+            case "search_attributes":
+              return this.handleSearchAttributes(validatedInput as SearchAttributesInput);
+            case "list_datasets":
+              return this.handleListDatasets(validatedInput as ListDatasetsInput);
+            default:
+              throw new McpError(
+                ErrorCode.MethodNotFound,
+                `Unknown tool: ${request.params.name}`
+              );
+          }
+        } catch (error) {
+          if (error instanceof z.ZodError) {
             throw new McpError(
-              ErrorCode.MethodNotFound,
-              `Unknown tool: ${request.params.name}`
+              ErrorCode.InvalidParams,
+              `Invalid parameters for tool ${request.params.name}: ${error.message}`
             );
+          }
+          throw error;
         }
       }
     );
   }
 
-  private async handleEcho(args: any) {
-    const message = args?.message;
-    if (typeof message !== "string") {
-      throw new McpError(
-        ErrorCode.InvalidParams,
-        "Message parameter must be a string"
-      );
-    }
-
+  private async handleEcho(args: EchoToolInput) {
+    // Input is already validated by ToolRegistry, so we can use it directly
     return {
       content: [
         {
           type: "text",
-          text: `Echo: ${message}`,
+          text: `Echo: ${args.message}`,
         },
       ],
     };
   }
 
-  private async handleSearchAttributes(args: any) {
-    const query = args?.query as string;
-    const page = (args?.page as number) || 1;
-    const perPage = (args?.perPage as number) || 10;
-
+  private async handleSearchAttributes(args: SearchAttributesInput) {
+    // Input is already validated and has defaults applied by ToolRegistry
     try {
-      const response = await this.apiClient.fetchAttributes(query, page, perPage);
+      const response = await this.apiClient.fetchAttributes(args.query, args.page, args.perPage);
       
-      // Store attributes in memory for resource access
-      for (const attr of response.records) {
-        this.resources[`attr-${attr.id}`] = {
-          id: `attr-${attr.id}`,
-          name: attr.display_name,
-          content: JSON.stringify(attr, null, 2),
-        };
-      }
+      // Store attributes in memory for resource access using ResourceManager
+      this.resourceManager.addAttributesAsResources(response.records);
 
       // Format the response
       const formattedResults = response.records.map(attr => 
@@ -141,7 +122,7 @@ export class ToolHandlers {
         content: [
           {
             type: "text",
-            text: `Found ${response.total_records} attributes matching "${query}"\nPage ${response.current_page} of ${response.total_pages}\n\n${formattedResults}\n\nYou can access full attribute details as resources.`
+            text: `Found ${response.total_records} attributes matching "${args.query}"\nPage ${response.current_page} of ${response.total_pages}\n\n${formattedResults}\n\nYou can access full attribute details as resources.`
           },
         ],
       };
@@ -158,18 +139,12 @@ export class ToolHandlers {
     }
   }
 
-  private async handleListDatasets(args: any) {
+  private async handleListDatasets(_args: ListDatasetsInput) {
     try {
       const response = await this.apiClient.fetchDatasets();
       
-      // Store datasets in memory for resource access
-      for (const dataset of response.records) {
-        this.resources[`dataset-${dataset.id}`] = {
-          id: `dataset-${dataset.id}`,
-          name: dataset.name,
-          content: JSON.stringify(dataset, null, 2),
-        };
-      }
+      // Store datasets in memory for resource access using ResourceManager
+      this.resourceManager.addDatasetsAsResources(response.records);
 
       // Format the response
       const formattedResults = response.records.map(dataset => {

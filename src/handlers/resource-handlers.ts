@@ -5,12 +5,13 @@ import {
   ErrorCode,
   McpError,
 } from "@modelcontextprotocol/sdk/types.js";
-import type { Resource } from "../types/index.js";
+import type { StoredResource } from "../types/index.js";
+import type { ResourceManager } from "../lib/resource-manager.js";
 
 export class ResourceHandlers {
   constructor(
     private server: Server,
-    private resources: Record<string, Resource>
+    private getResourceManager: () => ResourceManager
   ) {}
 
   setup(): void {
@@ -21,14 +22,12 @@ export class ResourceHandlers {
   private setupResourceList(): void {
     this.server.setRequestHandler(
       ListResourcesRequestSchema,
-      async () => ({
-        resources: Object.values(this.resources).map((resource) => ({
-          uri: `resource:///${resource.id}`,
-          name: resource.name,
-          mimeType: "text/plain",
-          description: `Resource: ${resource.name}`,
-        })),
-      })
+      async () => {
+        const resourceManager = this.getResourceManager();
+        return {
+          resources: resourceManager.getResourcesForList(),
+        };
+      }
     );
   }
 
@@ -38,9 +37,10 @@ export class ResourceHandlers {
       async (request) => {
         const url = new URL(request.params.uri);
         const id = url.pathname.replace(/^\//, "");
-        const resource = this.resources[id];
+        const resourceManager = this.getResourceManager();
+        const contents = resourceManager.getResourceContents(id, request.params.uri);
 
-        if (!resource) {
+        if (!contents) {
           throw new McpError(
             ErrorCode.InvalidRequest,
             `Resource ${id} not found`
@@ -48,13 +48,7 @@ export class ResourceHandlers {
         }
 
         return {
-          contents: [
-            {
-              uri: request.params.uri,
-              mimeType: "text/plain",
-              text: resource.content,
-            },
-          ],
+          contents: [contents],
         };
       }
     );

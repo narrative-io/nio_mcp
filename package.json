@@ -13,11 +13,12 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.8.0",
     "axios": "^1.8.4",
-    "dotenv": "^16.4.7"
+    "dotenv": "^16.4.7",
+    "zod": "^4.0.5"
   },
   "scripts": {
     "build": "tsc --outDir build",
-    "start": "bun build/src/index.js",
+    "start": "bun build/index.js",
     "dev": "bun --watch src/index.ts",
     "test": "bun test tests/",
     "test:watch": "bun test tests/ --watch"
