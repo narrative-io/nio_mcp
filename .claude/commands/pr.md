@@ -88,6 +88,7 @@ Any special deployment considerations, migrations, or configuration changes
 - [ ] All tests passing
 - [ ] No console.log or debug code left
 - [ ] Breaking changes documented
+- [ ] If this PR completes a Shortcut Ticket, move the Ticket into Review (in Workflow: Default)
 ```
 
 ## Writing Effective Descriptions
