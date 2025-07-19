@@ -1,6 +1,6 @@
-# TypeScript MCP Server
+# Narrative MCP Server
 
-A simple Model Context Protocol (MCP) server for Claude Desktop.
+A Model Context Protocol (MCP) server that provides access to Narrative's data marketplace APIs through Claude Code and Claude Desktop.
 
 ## Setup
 
@@ -14,6 +14,7 @@ bun add axios
 
 2. Configure environment variables:
 
+For development/testing:
 ```bash
 cp .env.template .env
 ```
@@ -21,6 +22,8 @@ cp .env.template .env
 Edit `.env` and add your Narrative API credentials:
 - `NARRATIVE_API_TOKEN` - Your Narrative API token
 - `NARRATIVE_API_URL` - Base URL for Narrative API endpoints (default: https://api.narrative.io)
+
+**Note**: When using with Claude Desktop, environment variables must be passed through the MCP configuration (see Installation section below).
 
 3. Create your server code in `src/index.ts`
 
@@ -30,23 +33,45 @@ Edit `.env` and add your Narrative API credentials:
 bun src/index.ts
 ```
 
-## Configure Claude Desktop
+## Installation
 
-Add this to your Claude Desktop configuration file:
+### For Claude Code Users (Recommended)
+
+The easiest way to install this MCP server is using Claude Code:
+
+```bash
+claude mcp install https://github.com/narrative-io/nio_mcp.git
+```
+
+This will automatically:
+- Clone the repository 
+- Install dependencies
+- Set up the MCP server configuration
+- Make it available in your Claude Code sessions
+
+### Manual Installation for Claude Desktop
+
+If you prefer to configure manually for Claude Desktop:
+
+1. Add this to your Claude Desktop configuration file:
 
 ```bash
 # On macOS
 code ~/Library/Application\ Support/Claude/claude_desktop_config.json
 ```
 
-Add this JSON (replace with YOUR actual paths):
+2. Add this JSON (replace with YOUR actual paths):
 
 ```json
 {
   "mcpServers": {
-    "my-server": {
+    "narrative-mcp": {
       "command": "/full/path/to/bun",
-      "args": ["/full/path/to/your/project/src/index.ts"]
+      "args": ["/full/path/to/your/project/build/index.js"],
+      "env": {
+        "NARRATIVE_API_URL": "https://api.narrative.io",
+        "NARRATIVE_API_TOKEN": "your_api_token_here"
+      }
     }
   }
 }
@@ -57,14 +82,54 @@ Find your bun path with:
 which bun
 ```
 
-## Test It
+## Available Tools
 
+This MCP server provides the following tools:
+
+- **`search_attributes`**: Search Narrative Rosetta Stone attributes with pagination
+- **`list_datasets`**: List all available datasets from the Narrative marketplace
+- **`echo`**: Simple echo tool for testing
+
+## Usage Examples
+
+### Search for attributes
+```
+Search for attributes related to "demographics"
+```
+
+### List datasets
+```
+Show me all available datasets
+```
+
+## Testing
+
+Run the test suite:
+```bash
+bun run test
+```
+
+## Verification
+
+### For Claude Code
+After installation, you can verify the server is working by asking Claude to:
+- "List all available datasets"
+- "Search for attributes related to location"
+
+### For Claude Desktop
 1. Restart Claude Desktop
 2. Click the "+" button in Claude's input box
 3. Your server's tools should appear in the list
 
-## Debug
+## Troubleshooting
 
+### Claude Code
+Check MCP server status:
+```bash
+claude mcp list
+```
+
+### Claude Desktop
 Check logs:
 ```bash
 tail -f ~/Library/Logs/Claude/mcp*.log

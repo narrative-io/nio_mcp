@@ -28,6 +28,18 @@ export interface AttributeResponse {
   records: Attribute[];
 }
 
+export interface Dataset {
+  id: string;
+  name: string;
+  description?: string;
+  // Additional fields will be added based on actual API response
+}
+
+export interface DatasetResponse {
+  records: Dataset[];
+  // Additional pagination fields will be added if supported by API
+}
+
 export interface ToolArguments {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;

@@ -9,7 +9,7 @@ import {
   ErrorCode,
   McpError,
 } from "@modelcontextprotocol/sdk/types.js";
-import type { Resource, AttributeResponse } from "./types/index.js";
+import type { Resource, AttributeResponse, DatasetResponse } from "./types/index.js";
 import dotenv from "dotenv";
 import axios from "axios";
 
@@ -34,8 +34,9 @@ export function validateEnvironmentVariables(env = process.env): { apiUrl: strin
   };
 }
 
-// Validate required environment variables
-const { apiUrl: NARRATIVE_API_URL, apiToken: NARRATIVE_API_TOKEN } = validateEnvironmentVariables();
+// Environment variables will be validated when server starts
+let NARRATIVE_API_URL: string;
+let NARRATIVE_API_TOKEN: string;
 
 // Sample resources (replace with your own)
 const resources: Record<string, Resource> = {
@@ -71,10 +72,38 @@ async function fetchAttributes(query: string = "", page: number = 1, perPage: nu
   }
 }
 
+// Function to fetch datasets
+async function fetchDatasets(): Promise<DatasetResponse> {
+  const url = new URL(`${NARRATIVE_API_URL}/datasets`);
+  
+  try {
+    const response = await axios.get<DatasetResponse>(url.toString(), {
+      headers: {
+        'Authorization': `Bearer ${NARRATIVE_API_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching datasets:", error);
+    throw error;
+  }
+}
+
 class MyMcpServer {
   private server: Server;
 
   constructor() {
+    // Validate environment variables when server is constructed
+    try {
+      const { apiUrl, apiToken } = validateEnvironmentVariables();
+      NARRATIVE_API_URL = apiUrl;
+      NARRATIVE_API_TOKEN = apiToken;
+    } catch (error) {
+      console.error("Failed to initialize MCP server:", error);
+      throw error;
+    }
+
     this.server = new Server(
       {
         name: "narrative-mcp-server",
@@ -187,6 +216,15 @@ class MyMcpServer {
               required: ["query"],
             },
           },
+          {
+            name: "list_datasets",
+            description: "List all available datasets from Narrative marketplace",
+            inputSchema: {
+              type: "object",
+              properties: {},
+              required: [],
+            },
+          },
         ],
       })
     );
@@ -249,6 +287,45 @@ class MyMcpServer {
                 {
                   type: "text",
                   text: `Error searching attributes: ${error}`,
+                },
+              ],
+              isError: true,
+            };
+          }
+        }
+        if (request.params.name === "list_datasets") {
+          try {
+            const response = await fetchDatasets();
+            
+            // Store datasets in memory for resource access
+            for (const dataset of response.records) {
+              resources[`dataset-${dataset.id}`] = {
+                id: `dataset-${dataset.id}`,
+                name: dataset.name,
+                content: JSON.stringify(dataset, null, 2),
+              };
+            }
+
+            // Format the response
+            const formattedResults = response.records.map(dataset => {
+              const description = dataset.description ? dataset.description.substring(0, 100) : 'No description available';
+              return `- ${dataset.name} (ID: ${dataset.id}): ${description}...`;
+            }).join('\n');
+
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: `Found ${response.records.length} datasets\n\n${formattedResults}\n\nYou can access full dataset details as resources.`
+                },
+              ],
+            };
+          } catch (error) {
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: `Error fetching datasets: ${error}`,
                 },
               ],
               isError: true,
