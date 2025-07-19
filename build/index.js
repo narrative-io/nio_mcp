@@ -131,7 +131,5 @@ async function startServer() {
         process.exit(1);
     }
 }
-// Only start server if this file is executed directly (not imported)
-if (import.meta.url === `file://${process.argv[1]}`) {
-    startServer();
-}
+// Start server (this file is the main entry point)
+startServer();

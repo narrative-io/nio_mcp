@@ -153,7 +153,5 @@ async function startServer(): Promise<void> {
   }
 }
 
-// Only start server if this file is executed directly (not imported)
-if (import.meta.url === `file://${process.argv[1]}`) {
-  startServer();
-}
+// Start server (this file is the main entry point)
+startServer();
