@@ -1,10 +1,10 @@
 import { ListResourcesRequestSchema, ReadResourceRequestSchema, ErrorCode, McpError, } from "@modelcontextprotocol/sdk/types.js";
 export class ResourceHandlers {
     server;
-    getResources;
-    constructor(server, getResources) {
+    getResourceManager;
+    constructor(server, getResourceManager) {
         this.server = server;
-        this.getResources = getResources;
+        this.getResourceManager = getResourceManager;
     }
     setup() {
         this.setupResourceList();
@@ -12,14 +12,9 @@ export class ResourceHandlers {
     }
     setupResourceList() {
         this.server.setRequestHandler(ListResourcesRequestSchema, async () => {
-            const resources = this.getResources();
+            const resourceManager = this.getResourceManager();
             return {
-                resources: Object.values(resources).map((resource) => ({
-                    uri: `resource:///${resource.id}`,
-                    name: resource.name,
-                    mimeType: "text/plain",
-                    description: `Resource: ${resource.name}`,
-                })),
+                resources: resourceManager.getResourcesForList(),
             };
         });
     }
@@ -27,19 +22,13 @@ export class ResourceHandlers {
         this.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
             const url = new URL(request.params.uri);
             const id = url.pathname.replace(/^\//, "");
-            const resources = this.getResources();
-            const resource = resources[id];
-            if (!resource) {
+            const resourceManager = this.getResourceManager();
+            const contents = resourceManager.getResourceContents(id, request.params.uri);
+            if (!contents) {
                 throw new McpError(ErrorCode.InvalidRequest, `Resource ${id} not found`);
             }
             return {
-                contents: [
-                    {
-                        uri: request.params.uri,
-                        mimeType: "text/plain",
-                        text: resource.content,
-                    },
-                ],
+                contents: [contents],
             };
         });
     }

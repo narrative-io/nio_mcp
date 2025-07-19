@@ -21,6 +21,12 @@ export class ToolHandlers {
     getResources() {
         return this.resourceManager.getAllResources();
     }
+    /**
+     * Get the resource manager for direct access to SDK-compatible methods
+     */
+    getResourceManager() {
+        return this.resourceManager;
+    }
     setupToolsList() {
         this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
             tools: ToolRegistry.getAllTools(),

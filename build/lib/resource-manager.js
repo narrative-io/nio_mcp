@@ -19,10 +19,34 @@ export class ResourceManager {
         return this.resources[id];
     }
     /**
-     * Get all resources
+     * Get all resources for internal use
      */
     getAllResources() {
         return { ...this.resources };
+    }
+    /**
+     * Convert internal resources to MCP Resource format for ListResources
+     */
+    getResourcesForList() {
+        return Object.values(this.resources).map(resource => ({
+            uri: `resource:///${resource.id}`,
+            name: resource.name,
+            description: resource.description,
+            mimeType: resource.mimeType || "text/plain",
+        }));
+    }
+    /**
+     * Convert internal resource to MCP TextResourceContents for ReadResource
+     */
+    getResourceContents(id, uri) {
+        const resource = this.resources[id];
+        if (!resource)
+            return undefined;
+        return {
+            uri,
+            mimeType: resource.mimeType || "text/plain",
+            text: resource.content,
+        };
     }
     /**
      * Remove a resource
@@ -61,6 +85,8 @@ export class ResourceManager {
                 id: `dataset-${dataset.id}`,
                 name: dataset.name,
                 content: JSON.stringify(dataset, null, 2),
+                description: `Narrative dataset: ${dataset.description || dataset.name}`,
+                mimeType: "application/json",
             });
         }
     }
@@ -73,6 +99,8 @@ export class ResourceManager {
                 id: `attr-${attr.id}`,
                 name: attr.display_name,
                 content: JSON.stringify(attr, null, 2),
+                description: `Narrative attribute: ${attr.description || attr.display_name}`,
+                mimeType: "application/json",
             });
         }
     }

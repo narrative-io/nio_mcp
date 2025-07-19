@@ -1,9 +1,18 @@
 import { z } from "zod";
 
-export interface Resource {
+// Import official MCP SDK types for resources
+export type { 
+  Resource,
+  TextResourceContents,
+} from "@modelcontextprotocol/sdk/types.js";
+
+// Custom interface for our internal resource storage (maps to MCP Resource + content)
+export interface StoredResource {
   id: string;
   name: string;
   content: string;
+  description?: string;
+  mimeType?: string;
 }
 
 export interface AttributeProperty {

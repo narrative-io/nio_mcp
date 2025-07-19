@@ -7,7 +7,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import type { 
-  Resource, 
+  StoredResource, 
   ToolValidationError,
   EchoToolInput,
   SearchAttributesInput,
@@ -23,7 +23,7 @@ export class ToolHandlers {
   constructor(
     private server: Server,
     private apiClient: NarrativeApiClient,
-    resources: Record<string, Resource>
+    resources: Record<string, StoredResource>
   ) {
     this.resourceManager = new ResourceManager(resources);
   }
@@ -36,8 +36,15 @@ export class ToolHandlers {
   /**
    * Get the underlying resources for use by ResourceHandlers
    */
-  getResources(): Record<string, Resource> {
+  getResources(): Record<string, StoredResource> {
     return this.resourceManager.getAllResources();
+  }
+
+  /**
+   * Get the resource manager for direct access to SDK-compatible methods
+   */
+  getResourceManager(): ResourceManager {
+    return this.resourceManager;
   }
 
   private setupToolsList(): void {

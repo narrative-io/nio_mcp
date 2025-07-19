@@ -1,7 +1,7 @@
 // src/index.ts
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import type { Resource } from "./types/index.js";
+import type { StoredResource } from "./types/index.js";
 import { config, validateEnvironmentVariables } from "./lib/config.js";
 import { NarrativeApiClient } from "./lib/api-client.js";
 import { ToolHandlers } from "./handlers/tool-handlers.js";
@@ -11,11 +11,13 @@ import { ResourceHandlers } from "./handlers/resource-handlers.js";
 export { validateEnvironmentVariables };
 
 // Sample resources (replace with your own)
-const resources: Record<string, Resource> = {
+const resources: Record<string, StoredResource> = {
   "1": {
     id: "1",
     name: "Sample Resource",
     content: "This is a sample resource that Claude can access.",
+    description: "A sample resource for testing",
+    mimeType: "text/plain",
   },
 };
 
@@ -58,7 +60,7 @@ class MyMcpServer {
     );
 
     this.toolHandlers = new ToolHandlers(this.server, this.apiClient, resources);
-    this.resourceHandlers = new ResourceHandlers(this.server, () => this.toolHandlers.getResources());
+    this.resourceHandlers = new ResourceHandlers(this.server, () => this.toolHandlers.getResourceManager());
 
     this.setupHandlers();
     this.setupErrorHandling();
