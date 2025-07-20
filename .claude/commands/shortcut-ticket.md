@@ -5,6 +5,9 @@ Create a shortcut ticket if I dont' give you one (`$ARGUMENTS`) or else look at 
 ## Overview
 When creating a Shortcut ticket, you must provide a complete specification that enables any team member to understand the problem, its context, and implementation requirements. Follow this structured approach to ensure all critical aspects are covered.
 
+## Workflow
+Unless you know a ticket is for the Frontend, always use the Default Workflow, Team Backend for all Shortcut tickets you create. 
+
 ## Required Sections
 
 ### 1. Problem Statement

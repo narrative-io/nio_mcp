@@ -36,7 +36,7 @@ class MyMcpServer {
         }, {
             capabilities: {
                 resources: {
-                    // Support for dynamic resource reading
+                    // Support for dynamic resource reading and ResourceTemplate
                     subscribe: true,
                     listChanged: true,
                 },
@@ -51,7 +51,7 @@ class MyMcpServer {
             instructions: "Narrative MCP Server provides access to Narrative's data marketplace APIs. Available tools: echo (test), search_attributes (search Rosetta Stone), list_datasets (list available datasets). Resources are created dynamically when tools are used.",
         });
         this.toolHandlers = new ToolHandlers(this.server, this.apiClient, resources);
-        this.resourceHandlers = new ResourceHandlers(this.server, () => this.toolHandlers.getResourceManager());
+        this.resourceHandlers = new ResourceHandlers(this.server, () => this.toolHandlers.getResourceManager(), this.apiClient);
         this.setupHandlers();
         this.setupErrorHandling();
     }

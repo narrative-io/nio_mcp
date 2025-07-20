@@ -43,7 +43,7 @@ class MyMcpServer {
       {
         capabilities: {
           resources: {
-            // Support for dynamic resource reading
+            // Support for dynamic resource reading and ResourceTemplate
             subscribe: true,
             listChanged: true,
           },
@@ -60,7 +60,7 @@ class MyMcpServer {
     );
 
     this.toolHandlers = new ToolHandlers(this.server, this.apiClient, resources);
-    this.resourceHandlers = new ResourceHandlers(this.server, () => this.toolHandlers.getResourceManager());
+    this.resourceHandlers = new ResourceHandlers(this.server, () => this.toolHandlers.getResourceManager(), this.apiClient);
 
     this.setupHandlers();
     this.setupErrorHandling();

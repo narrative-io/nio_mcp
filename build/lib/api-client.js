@@ -41,4 +41,16 @@ export class NarrativeApiClient {
             throw new Error(`Failed to fetch datasets: ${error}`);
         }
     }
+    async fetchDatasetById(id) {
+        const url = new URL(`${this.apiUrl}/datasets/${id}`);
+        try {
+            const response = await axios.get(url.toString(), {
+                headers: this.headers,
+            });
+            return response.data;
+        }
+        catch (error) {
+            throw new Error(`Failed to fetch dataset ${id}: ${error}`);
+        }
+    }
 }
